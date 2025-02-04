@@ -1,0 +1,13 @@
+services:
+  kinko:
+    image: ghcr.io/kerezsiz42/kinko:latest
+    environment:
+      TOKEN: "9f888ce1-eee2-428a-9150-da7459e818c4" # ATTENTION: replace with your own string
+      CSV_PATH: "./db.csv"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - 8080:8080
