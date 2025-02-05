@@ -48,3 +48,5 @@ sudo less /var/lib/docker/containers/${CONTAINER_ID}/${CONTAINER_ID}-json.log
 - use grype scan
 - write unit tests for database layer
 - write e2e tests
+- integrate with <https://docs.codecov.com/docs/quick-start>
+- authorization on initialization

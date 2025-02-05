@@ -24,6 +24,11 @@ gen:
 lint:
 	golangci-lint run
 
+.PHONY: test
+test:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
 .PHONY: run
 run: build
 	./bin/kinko

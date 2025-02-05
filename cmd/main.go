@@ -15,7 +15,7 @@ import (
 func main() {
 	srv := &http.Server{
 		Addr:    ":8080",
-		Handler: server.GetMux(),
+		Handler: server.Mux(),
 	}
 
 	go func() {

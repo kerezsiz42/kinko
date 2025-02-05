@@ -6,18 +6,21 @@ import (
 	"log/slog"
 	"net/http"
 	"text/template"
+
+	"github.com/kerezsiz42/kinko/internal/database"
 )
 
 type IndexPageData struct {
-	Message string
+	Banner  string
+	Records []database.Record
 }
 
-//go:embed template.html
-var templateHTML embed.FS
+//go:embed index.template.html
+var indexTemplateHTML embed.FS
 var tmpl *template.Template
 
 func init() {
-	t, err := template.ParseFS(templateHTML, "template.html")
+	t, err := template.ParseFS(indexTemplateHTML, "index.template.html")
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +30,13 @@ func init() {
 
 func GetIndexPage(w http.ResponseWriter, r *http.Request) {
 	data := IndexPageData{
-		Message: "Hello, this is a simple HTML template example in Go!",
+		Banner: "John Smith's database",
+		Records: []database.Record{
+			database.NewRecord("Login", "email@email.com", "password", "This is very important"),
+			database.NewRecord("Login 2", "email@email.com", "password", "This is very important"),
+			database.NewRecord("Login 3", "email@email.com", "password", "This is very important"),
+			database.NewRecord("Login 4", "email@email.com", "password", "This is very important"),
+		},
 	}
 
 	if err := tmpl.Execute(w, data); err != nil {
@@ -51,11 +60,13 @@ func Import(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func GetMux() *http.ServeMux {
+func Mux() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", GetIndexPage)
 	mux.HandleFunc("POST /records/{id}", PostRecords)
-	mux.HandleFunc("POST /export", Export)
+	mux.HandleFunc("GET /records/{id}", PostRecords)
+	mux.HandleFunc("GET /records/export", Export)
+	mux.HandleFunc("POST /records/import", Import)
 
 	return mux
 }

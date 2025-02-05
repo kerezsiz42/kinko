@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>金庫 - Kinko Vault</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      :root {
+        --text: #cdd6f4;
+        --crust: #11111b;
+      }
+
+      html,
+      body {
+        margin: 0;
+      }
+
+      body {
+        font-family: monospace;
+        background-color: var(--crust);
+        color: var(--text);
+        font-size: large;
+        margin: auto;
+        padding: 1em;
+        max-width: 1000px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        border-color: var(--text);
+      }
+      th,
+      td {
+        padding: 0.5em;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>金庫 - Kinko Vault</h1>
+    <h2>{{.Banner}}</h2>
+    <table border="1">
+      <tr>
+        <th>Name</th>
+        <th>Public</th>
+        <th>Private</th>
+        <th>Last Updated</th>
+        <th>Details</th>
+      </tr>
+      {{range .Records}}
+      <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Public}}</td>
+        <td>
+          <input type="password" name="Private" value="{{.Private}}" />
+        </td>
+        <td>{{.UpdatedAt}}</td>
+        <td>
+          <form action="/record/{{.Key}}" method="GET">
+            <button type="submit">Show</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+    </table>
+  </body>
+</html>

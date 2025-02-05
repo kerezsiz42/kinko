@@ -2,19 +2,21 @@ package csv_database
 
 import (
 	"encoding/csv"
-	"errors"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/kerezsiz42/kinko/internal/database"
+	"github.com/kerezsiz42/kinko/internal/utils"
 )
 
 type CsvDatabase struct {
-	FilePath string
+	DbFilePath string
+	mu         sync.Mutex
 }
 
 func NewCsvDatabase(filePath string) *CsvDatabase {
-	db := &CsvDatabase{FilePath: filePath}
+	db := &CsvDatabase{DbFilePath: filePath}
 	if _, err := db.Load(); err != nil {
 		panic(err)
 	}
@@ -23,43 +25,59 @@ func NewCsvDatabase(filePath string) *CsvDatabase {
 }
 
 func (db *CsvDatabase) Load() ([]database.Record, error) {
-	file, err := os.Open(db.FilePath)
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	file, err := os.Open(db.DbFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not open csv file: %w", err)
 	}
 	defer file.Close()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not parse csv records: %w", err)
 	}
 
 	var parsedRecords []database.Record
-	for lineIndex, record := range records {
-		// Skip header
-		if lineIndex == 0 {
-			continue
+	for line, record := range records {
+		if line == 0 && !utils.AreSlicesIdentical(record, database.RecordFields) {
+			return nil, fmt.Errorf("invalid header, should be exactly %s", database.RecordFields)
 		}
 
-		if len(record) != database.RECORD_LEN {
-			return nil, fmt.Errorf("line %d has %d rows instead of %d", lineIndex, len(record), database.RECORD_LEN)
+		if len(record) != len(database.RecordFields) {
+			return nil, fmt.Errorf("line %d has %d rows instead of %d", line, len(record), len(database.RecordFields))
 		}
 
-		parsedRecords = append(parsedRecords, database.Record{
-			Key:       record[0],
-			Name:      record[1],
-			Public:    record[2],
-			Private:   record[3],
-			Info:      record[4],
-			UpdatedAt: record[5],
-			CreatedAt: record[6],
-		})
+		parsedRecords = append(parsedRecords, database.RecordFromCSV(record))
 	}
 
 	return parsedRecords, nil
 }
 
-func (db *CsvDatabase) Persist([]database.Record) error {
-	return errors.New("not implemented")
+func (db *CsvDatabase) Persist(records []database.Record) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	file, err := os.Open(db.DbFilePath)
+	if err != nil {
+		return fmt.Errorf("could not open csv file: %w", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	if err := writer.Write(database.RecordFields); err != nil {
+		return fmt.Errorf("could not write header: %w", err)
+	}
+
+	for _, record := range records {
+		if err := writer.Write(record.ToCSV()); err != nil {
+			return fmt.Errorf("could not write record: %w", err)
+		}
+	}
+
+	return nil
 }
